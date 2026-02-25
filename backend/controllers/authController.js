@@ -25,7 +25,7 @@ const registerUser = async (req, res) => {
     res.status(201).json({ message: `Profile created, ${user.name}` });
   } catch (error) {
     if (error.name === "SequelizeUniqueConstraintError") {
-      return sendError(res, error, 400, "Account already exist for this email");
+      return sendError(res, error, 400, "Account already exist for this email/phone");
     }
     sendError(res, error, 500);
   }
