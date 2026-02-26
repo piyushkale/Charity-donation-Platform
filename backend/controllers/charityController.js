@@ -29,8 +29,26 @@ const createCharity = async (req, res) => {
 
 const getAllCharities = async (req, res) => {
   try {
-    const data = await charityModel.findAll({ where: { status: "APPROVED" } });
-    res.status(200).json({ data });
+    const page = Number(req.query.page) || 1;
+    const pageSize = 10;
+
+    const validPage = page > 0 ? page : 1;
+    const offset = (validPage - 1) * pageSize;
+
+    const { count, rows } = await charityModel.findAndCountAll({
+      where: { status: "APPROVED" },
+      limit: pageSize,
+      offset
+    });
+
+    const totalPages = Math.ceil(count / pageSize);
+
+    res.status(200).json({
+      charities: rows,
+      totalPages,
+      currentPage: validPage
+    });
+
   } catch (error) {
     return sendError(res, error, 500);
   }

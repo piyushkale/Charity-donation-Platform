@@ -1,16 +1,14 @@
 const express = require("express");
 require("dotenv").config();
 const db = require("./utils/db-connection");
-require("./models/associations");
+
+const path = require("path");
 const indexRoute = require("./routes");
 const app = express();
 
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send(`<h1>Homepage</h1>`);
-});
-
+app.use(express.static(path.join(__dirname, "../frontend")));
 app.use("/api", indexRoute);
 
 db.sync({ alter: true })
