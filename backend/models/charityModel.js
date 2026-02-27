@@ -11,7 +11,7 @@ const charityModel = sequelize.define("charities", {
     allowNull: false,
     validate: {
       min: 1,
-    },
+    },  
   },
   collected_amount: { type: DataTypes.INTEGER },
   status: {

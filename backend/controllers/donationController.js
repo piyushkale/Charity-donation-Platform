@@ -1,8 +1,9 @@
 const donationModel = require("../models/donationModel");
 const crypto = require("crypto");
 const razorpay = require("../config/razorpay");
+const charityModel = require("../models/charityModel");
 const sendError = require("../services/handleError");
-
+const sequelize = require("../utils/db-connection");
 const createOrder = async (req, res) => {
   try {
     const { userId } = req.user;
@@ -23,6 +24,7 @@ const createOrder = async (req, res) => {
       order_id: order.id,
       userId,
       charityId,
+      currency: "INR",
     });
 
     res.status(200).json({
@@ -36,9 +38,15 @@ const createOrder = async (req, res) => {
 };
 
 const verifyPayment = async (req, res) => {
+  const t = await sequelize.transaction();
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
-      req.body;
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      charityId,
+      amount,
+    } = req.body;
 
     // Basic validation
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
@@ -74,14 +82,43 @@ const verifyPayment = async (req, res) => {
     // Update donation as SUCCESS
     donation.status = "SUCCESS";
     donation.payment_id = razorpay_payment_id;
-    await donation.save();
+    await donation.save({ transaction: t });
 
+    const charity = await charityModel.findByPk(donation.charityId, {
+      transaction: t,
+    });
+    charity.collected_amount += Number(amount);
+    await charity.save({ transaction: t });
+    await t.commit();
     return res.status(200).json({
       message: "Payment verified successfully",
     });
   } catch (error) {
+    await t.rollback();
     return sendError(res, error, 500);
   }
 };
+const getMyDonations = async (req, res) => {
+  try {
+    const { userId } = req.user;
 
-module.exports = { createOrder, verifyPayment };
+    const data = await donationModel.findAll({
+      where: { userId },
+      include: [
+        {
+          model: charityModel,
+          as: "charity",
+          attributes: ["name"],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    return res.status(200).json({ donations: data });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Failed to fetch donations" });
+  }
+};
+
+module.exports = { createOrder, verifyPayment, getMyDonations };

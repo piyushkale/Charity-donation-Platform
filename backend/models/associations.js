@@ -10,6 +10,7 @@ charity.belongsTo(user, { foreignKey: "userId", as: "owner" });
 user.hasMany(donation, { foreignKey: "userId", as: "donations" });
 donation.belongsTo(user, { foreignKey: "userId", as: "donor" });
 
+
 // Charity - Donation
 charity.hasMany(donation, { foreignKey: "charityId", as: "donations" });
 donation.belongsTo(charity, { foreignKey: "charityId", as: "charity" });
