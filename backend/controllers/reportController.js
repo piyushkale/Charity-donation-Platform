@@ -32,12 +32,12 @@ const getImpactReport = async (req, res) => {
     if (!charityId) {
       return sendError(res, null, 400, "Bad request");
     }
-    const charity = await charityModel.findByPk(Number(charityId));
+    const charity = await charityModel.findByPk(Number(charityId)); 
     if (!charity) {
       return sendError(res, null, 404, "Charity not found!");
     }
     const iReports = await charity.getImpactReports();
-    res.status(200).json(iReports);
+    res.status(200).json({iReports,charity});
   } catch (error) {
     return sendError(res, error, 500);
   }
