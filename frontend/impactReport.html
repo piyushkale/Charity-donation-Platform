@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./src/output.css" />
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <title>Impact Reports</title>
+  </head>
+
+  <body class="bg-gray-100 min-h-screen">
+    <!-- Navbar -->
+    <nav class="bg-white shadow-md px-8 py-4 flex justify-between items-center">
+      <h1 class="text-xl font-bold text-indigo-600">
+        Impact Reports - One 4 all organization
+      </h1>
+      <button
+        id="logoutBtn"
+        class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
+      >
+        Logout
+      </button>
+    </nav>
+
+    <div class="max-w-5xl mx-auto p-8">
+      <!-- Create Impact Report -->
+      <div class="bg-white shadow-lg rounded-2xl p-6 mb-10">
+        <h2 class="text-lg font-semibold mb-6 text-gray-700">
+          Create Impact Report
+        </h2>
+
+        <form id="impactForm" class="space-y-5">
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">
+              Title
+            </label>
+            <input
+              type="text"
+              name="title"
+              class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">
+              Description
+            </label>
+            <textarea
+              name="description"
+              rows="4"
+              class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none"
+              required
+            ></textarea>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg transition"
+          >
+            Publish Report
+          </button>
+        </form>
+      </div>
+
+      <!-- Reports List -->
+      <div>
+        <h2 class="text-lg font-semibold mb-6 text-gray-700">
+          All Impact Reports
+        </h2>
+        <div
+          id="reportList"
+          class="space-y-4 max-h-[70vh] overflow-y-auto"
+        ></div>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById("impactForm");
+      const reportList = document.getElementById("reportList");
+
+      const params = new URLSearchParams(window.location.search);
+      const charityId = params.get("charityId");
+
+      if (!charityId) {
+        alert("Invalid Charity");
+        window.location.href = "/org-dashboard.html";
+      }
+
+      async function checkAuth() {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          window.location.href = "/login.html";
+          return;
+        }
+
+        try {
+          const res = await axios.get("/api/auth/profile", {
+            headers: { Authorization: token },
+          });
+
+          if (res.data.role !== "CHARITY") {
+            window.location.href = "/login.html";
+            return;
+          }
+
+          loadReports();
+        } catch (err) {
+          localStorage.removeItem("token");
+          window.location.href = "/login.html";
+        }
+      }
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        try {
+          const title = form.querySelector('input[name="title"]').value.trim();
+          const description = form
+            .querySelector('textarea[name="description"]')
+            .value.trim();
+          const token = localStorage.getItem("token");
+
+          await axios.post(
+            `/api/impactReport/${charityId}`,
+            { title, description },
+            { headers: { Authorization: token } },
+          );
+
+          form.reset();
+          loadReports();
+        } catch (err) {
+          console.error(err.response?.data || err.message);
+          alert("Failed to create impact report");
+        }
+      });
+
+      async function loadReports() {
+        try {
+          const res = await axios.get(`/api/impactReport/${charityId}`);
+          const reports = res.data;
+
+          reportList.innerHTML = "";
+
+          if (reports.length === 0) {
+            reportList.innerHTML =
+              "<p class='text-gray-500'>No reports yet.</p>";
+            return;
+          }
+
+          reports.forEach((report) => {
+            const card = document.createElement("div");
+            card.className =
+              "bg-white shadow-md rounded-2xl p-6 hover:shadow-lg transition";
+
+            card.innerHTML = `
+        <h3 class="text-lg font-semibold mb-2">${report.title}</h3>
+        <p class="text-gray-600">${report.description}</p>
+        <p class="text-sm text-gray-400 mt-3">
+          ${new Date(report.createdAt).toLocaleString()}
+        </p>
+      `;
+
+            reportList.appendChild(card);
+          });
+        } catch (err) {
+          console.error(err.response?.data || err.message);
+        }
+      }
+
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        localStorage.removeItem("token");
+        window.location.href = "/login.html";
+      });
+
+      checkAuth();
+    </script>
+  </body>
+</html>
