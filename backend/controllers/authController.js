@@ -5,7 +5,6 @@ const jwt = require("jsonwebtoken");
 
 const SALT_ROUNDS = 10;
 
-
 const registerUser = async (req, res) => {
   try {
     const { name, email, phone, password, role } = req.body;
@@ -25,7 +24,12 @@ const registerUser = async (req, res) => {
     res.status(201).json({ message: `Profile created, ${user.name}` });
   } catch (error) {
     if (error.name === "SequelizeUniqueConstraintError") {
-      return sendError(res, error, 400, "Account already exist for this email/phone");
+      return sendError(
+        res,
+        error,
+        400,
+        "Account already exist for this email/phone",
+      );
     }
     sendError(res, error, 500);
   }
@@ -46,7 +50,7 @@ const loginUser = async (req, res) => {
       return sendError(res, null, 400, "Invalid email or password");
     }
     const token = jwt.sign(
-      { userId: user.id, role: user.role,name:user.name},
+      { userId: user.id, role: user.role, name: user.name },
       process.env.JWT_SECRET,
       { expiresIn: "1d" },
     );
@@ -63,4 +67,15 @@ const loginUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser };
+const userProfile = async (req, res) => {
+  try {
+    const { userId, name, role } = req.user;
+    if (!userId || !name || !role) {
+      return sendError(res, null, 403, "Access denied");
+    }
+    res.status(200).json({ name, role, userId });
+  } catch (error) {
+    return sendError(res, error, 500);
+  }
+};
+module.exports = { registerUser, loginUser, userProfile };
