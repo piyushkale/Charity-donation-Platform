@@ -11,9 +11,7 @@
   <body class="bg-gray-100 min-h-screen">
     <!-- Navbar -->
     <nav class="bg-white shadow-md px-8 py-4 flex justify-between items-center">
-      <h1 class="text-xl font-bold text-indigo-600">
-        Impact Reports - One 4 all organization
-      </h1>
+      <h1 class="text-xl font-bold text-indigo-600" id="charityProfile"></h1>
       <button
         id="logoutBtn"
         class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
@@ -21,7 +19,9 @@
         Logout
       </button>
     </nav>
+    <!-- charity information -->
 
+    <div id="card" class="max-w-3xl mx-auto p-8 bg-white mt-4 rounded-lg"></div>
     <div class="max-w-5xl mx-auto p-8">
       <!-- Create Impact Report -->
       <div class="bg-white shadow-lg rounded-2xl p-6 mb-10">
@@ -98,6 +98,8 @@
           const res = await axios.get("/api/auth/profile", {
             headers: { Authorization: token },
           });
+          const charityProfile = document.getElementById("charityProfile");
+          charityProfile.innerHTML = `Impact Reports - ${res.data.name}`;
 
           if (res.data.role !== "CHARITY") {
             window.location.href = "/login.html";
@@ -138,7 +140,42 @@
       async function loadReports() {
         try {
           const res = await axios.get(`/api/impactReport/${charityId}`);
-          const reports = res.data;
+
+          const reports = res.data.iReports;
+          const charity = res.data.charity;
+          const collected = charity.collected_amount
+            ? charity.collected_amount
+            : 0;
+          const goal = charity.goal_amount ? charity.goal_amount : 1;
+
+          const percentage = Math.min(
+            Math.round((collected / goal) * 100),
+            100,
+          );
+          const charityTag = document.getElementById("card");
+          charityTag.innerHTML = `
+        <h3 class="text-lg font-semibold mb-2">${charity.name}</h3>
+        <p class="text-gray-600 mb-2">${charity.description}</p>
+        <p class="text-gray-600 mb-3 italic">${charity.mission}</p>
+        <p class="text-sm text-gray-500 mb-3">Goal: ₹${charity.goal_amount} Raised: ₹${charity.collected_amount ? charity.collected_amount : 0}</p>
+     
+          <!-- Progress Bar -->
+        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden mt-3">
+          <div 
+            class="bg-indigo-600 h-3 rounded-full transition-all duration-500"
+            style="width: ${percentage}%">
+          </div>
+        </div>
+
+        <div class="mt-2 text-right text-xs text-gray-500">
+          ${percentage}% funded
+        </div>
+      </div>
+         <span class="px-3 py-1 text-sm font-medium rounded-full bg-gray-300">
+          ${charity.status}
+        </span>
+        
+      `;
 
           reportList.innerHTML = "";
 

@@ -1,0 +1,186 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="./src/output.css" />
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </head>
+
+  <body class="bg-gray-100 min-h-screen p-8 hidden">
+    <!-- Navbar -->
+    <nav
+      class="bg-white shadow-md px-8 py-4 flex justify-between mb-6 items-center"
+    >
+      <h1 class="text-2xl font-bold text-indigo-600">
+        Charity - Admin Dashboard
+      </h1>
+      <button
+        id="logoutBtn"
+        class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
+      >
+        Logout
+      </button>
+    </nav>
+
+    <!-- Pending Section -->
+    <div class="mb-10">
+      <h2 class="text-xl font-semibold mb-4 text-yellow-600">
+        Pending Charities
+      </h2>
+      <div
+        id="pendingList"
+        class="space-y-4 max-h-[70vh] overflow-y-auto"
+      ></div>
+    </div>
+
+    <!-- Approved Section -->
+    <div class="mb-10">
+      <h2 class="text-xl font-semibold mb-4 text-green-600">
+        Approved Charities
+      </h2>
+      <div
+        id="approvedList"
+        class="space-y-4 max-h-[70vh] overflow-y-auto"
+      ></div>
+    </div>
+
+    <!-- Rejected Section -->
+    <div class="mb-10">
+      <h2 class="text-xl font-semibold mb-4 text-red-600">
+        Rejected Charities
+      </h2>
+      <div
+        id="rejectedList"
+        class="space-y-4 max-h-[70vh] overflow-y-auto"
+      ></div>
+    </div>
+
+    <script>
+      const token = localStorage.getItem("token");
+      window.onload = async () => {
+        await checkAuth();
+       document.querySelector('body').classList.remove('hidden')
+      };
+      async function checkAuth() {
+        if (!token) {
+          window.location.href = "/login.html";
+          return;
+        }
+
+        try {
+          const res = await axios.get("/api/auth/profile", {
+            headers: { Authorization: token },
+          });
+          //   const charityProfile = document.getElementById("charityProfile");
+          //   charityProfile.innerHTML = `Impact Reports - ${res.data.name}`;
+
+          if (res.data.role !== "ADMIN") {
+            window.location.href = "/login.html";
+            return;
+          }
+
+          loadAll();
+        } catch (err) {
+          localStorage.removeItem("token");
+          window.location.href = "/login.html";
+        }
+      }
+
+      checkAuth();
+      async function loadAll() {
+        await Promise.all([loadPending(), loadApproved(), loadRejected()]);
+      }
+
+      async function loadPending() {
+        const res = await axios.get("/api/admin/status/PENDING", {
+          headers: { Authorization: token },
+        });
+
+        renderCharities(res.data.data, "pendingList", true);
+      }
+
+      async function loadApproved() {
+        const res = await axios.get("/api/admin/status/APPROVED", {
+          headers: { Authorization: token },
+        });
+        renderCharities(res.data.data, "approvedList", false);
+      }
+
+      async function loadRejected() {
+        const res = await axios.get("/api/admin/status/REJECTED", {
+          headers: { Authorization: token },
+        });
+        renderCharities(res.data.data, "rejectedList", false);
+      }
+
+      function renderCharities(charities, containerId, isPending) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = "";
+
+        if (!charities.length) {
+          container.innerHTML = `
+      <div class="bg-white p-4 rounded shadow text-gray-500">
+        No charities found
+      </div>
+    `;
+          return;
+        }
+
+        charities.forEach((charity) => {
+          const card = document.createElement("div");
+          card.className =
+            "bg-white p-6 rounded-xl shadow flex justify-between items-center";
+
+          card.innerHTML = `
+      <div>
+        <h3 class="font-bold text-lg">${charity.name}</h3>
+        <p class="text-sm text-gray-600 mt-1">${charity.mission}</p>
+      </div>
+      <div>
+        ${
+          isPending
+            ? `
+              <button onclick="updateStatus(${charity.id}, 'APPROVED')" 
+                class="px-4 py-2 bg-green-600 text-white rounded-lg mr-2 hover:bg-green-700">
+                APPROVE
+              </button>
+              <button onclick="updateStatus(${charity.id}, 'REJECTED')" 
+                class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                REJECT
+              </button>
+            `
+            : `<span class="px-4 py-2 bg-gray-200 rounded-lg text-sm font-semibold">
+                ${charity.status}
+              </span>`
+        }
+      </div>
+    `;
+
+          container.appendChild(card);
+        });
+      }
+
+      async function updateStatus(id, status) {
+        try {
+          await axios.patch(
+            `/api/admin/status/${id}`,
+            { status },
+            {
+              headers: { Authorization: token },
+            },
+          );
+          await loadAll(); // refresh everything
+        } catch (err) {
+          alert("Failed to update status");
+        }
+      }
+
+      loadAll();
+
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        localStorage.removeItem("token");
+        window.location.href = "/login.html";
+      });
+    </script>
+  </body>
+</html>
