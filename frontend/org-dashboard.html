@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./src/output.css" />
+    <title>Charity Dashboard</title>
+  </head>
+
+  <body class="bg-gray-100 min-h-screen">
+    <!-- Navbar -->
+    <nav class="bg-white shadow-md px-8 py-4 flex justify-between items-center">
+      <h1 class="text-2xl font-bold text-indigo-600" id="userName"></h1>
+      <button
+        id="logoutBtn"
+        class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
+      >
+        Logout
+      </button>
+    </nav>
+
+    <div class="max-w-6xl mx-auto p-8">
+      <!-- Create Charity Card -->
+      <div class="bg-white shadow-lg rounded-2xl p-6 mb-10">
+        <h2 class="text-xl font-semibold mb-6 text-gray-700">
+          Create New Charity
+        </h2>
+
+        <form id="createCharityForm" class="space-y-5">
+          <!-- Name -->
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">
+              Charity Name
+            </label>
+            <input
+              type="text"
+              name="name"
+              placeholder="Enter charity name"
+              class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none"
+              required
+            />
+          </div>
+
+          <!-- Description -->
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">
+              Description
+            </label>
+            <textarea
+              name="description"
+              rows="3"
+              placeholder="Brief description about the charity"
+              class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none"
+              required
+            ></textarea>
+          </div>
+
+          <!-- Mission -->
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">
+              Mission
+            </label>
+            <textarea
+              name="mission"
+              rows="3"
+              placeholder="What is the mission of this charity?"
+              class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none"
+              required
+            ></textarea>
+          </div>
+
+          <!-- Goal Amount -->
+          <div>
+            <label class="block text-sm font-medium text-gray-600 mb-1">
+              Goal Amount (₹)
+            </label>
+            <input
+              type="number"
+              name="goalAmount"
+              placeholder="Enter goal amount"
+              class="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-indigo-400 outline-none"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-medium transition"
+          >
+            Create Charity
+          </button>
+        </form>
+      </div>
+
+      <!-- My Charities -->
+      <div>
+        <h2 class="text-xl font-semibold mb-6 text-gray-700">My Charities</h2>
+        <div id="charityList" class="grid md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto"></div>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        window.location.href = "login.html";
+      }
+
+      // Decode JWT
+      function parseJwt(token) {
+        try {
+          const base64Url = token.split(".")[1];
+          const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+          const jsonPayload = decodeURIComponent(
+            atob(base64)
+              .split("")
+              .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+              .join(""),
+          );
+
+          return JSON.parse(jsonPayload);
+        } catch (err) {
+          return null;
+        }
+      }
+
+      const decoded = parseJwt(token);
+
+      if (!decoded) {
+        localStorage.removeItem("token");
+        window.location.href = "login.html";
+      }
+
+      // Check Expiry
+      if (decoded.exp * 1000 < Date.now()) {
+        localStorage.removeItem("token");
+        window.location.href = "login.html";
+      }
+
+      // Check Role
+      if (decoded.role !== "CHARITY") {
+        localStorage.removeItem("token");
+        window.location.href = "login.html";
+      }
+      console.log(decoded);
+      if (decoded?.name) {
+        document.getElementById("userName").innerText =
+          "Charity dashboard-" + " Welcome " + decoded.name;
+      }
+
+      const form = document.getElementById("createCharityForm");
+      const charityList = document.getElementById("charityList");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        try {
+          const name = form.querySelector('input[name="name"]').value.trim();
+          const description = form
+            .querySelector('textarea[name="description"]')
+            .value.trim();
+          const mission = form
+            .querySelector('textarea[name="mission"]')
+            .value.trim();
+          const goalAmount = form.querySelector(
+            'input[name="goalAmount"]',
+          ).value;
+
+          const token = localStorage.getItem("token");
+          console.log(typeof goalAmount);
+          const res = await axios.post(
+            "/api/charities/",
+            {
+              name,
+              description,
+              mission,
+              goal_amount: Number(goalAmount),
+            },
+            {
+              headers: {
+                Authorization: token,
+              },
+            },
+          );
+
+          alert("Charity Created Successfully 🚀");
+          form.reset();
+          loadCharities();
+        } catch (err) {
+          console.error(err.response?.data || err.message);
+          alert(err.response?.data?.message || "Failed to create charity");
+        }
+      });
+
+      async function loadCharities() {
+        try {
+          const token = localStorage.getItem("token");
+
+          const res = await axios.get("/api/charities/owner", {
+            headers: {
+              Authorization: token,
+            },
+          });
+          const charities = res.data?.data;
+
+          charityList.innerHTML = "";
+
+          charities.forEach((charity) => {
+            const collected = charity.collected_amount
+              ? charity.collected_amount
+              : 0;
+            const goal = charity.goal_amount ? charity.goal_amount : 1;
+
+            const percentage = Math.min(
+              Math.round((collected / goal) * 100),
+              100,
+            );
+            let statusColor = "bg-yellow-100 text-yellow-700";
+
+            if (charity.status === "APPROVED")
+              statusColor = "bg-green-100 text-green-700";
+
+            if (charity.status === "REJECTED")
+              statusColor = "bg-red-100 text-red-700";
+
+            const card = document.createElement("div");
+            card.className =
+              "bg-white shadow-md rounded-2xl p-6 hover:shadow-xl transition";
+
+            card.innerHTML = `
+        <h3 class="text-lg font-semibold mb-2">${charity.name}</h3>
+        <p class="text-gray-600 mb-2">${charity.description}</p>
+        <p class="text-gray-600 mb-3 italic">${charity.mission}</p>
+        <p class="text-sm text-gray-500 mb-3">Goal: ₹${charity.goal_amount} Raised: ₹${charity.collected_amount ? charity.collected_amount : 0}</p>
+     
+          <!-- Progress Bar -->
+        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden mt-3">
+          <div 
+            class="bg-indigo-600 h-3 rounded-full transition-all duration-500"
+            style="width: ${percentage}%">
+          </div>
+        </div>
+
+        <div class="mt-2 text-right text-xs text-gray-500">
+          ${percentage}% funded
+        </div>
+      </div>
+         <span class="px-3 py-1 text-sm font-medium rounded-full ${statusColor}">
+          ${charity.status}
+        </span>
+      `;
+
+            charityList.appendChild(card);
+          });
+        } catch (err) {
+          console.error(err.response?.data || err.message);
+        }
+      }
+      loadCharities();
+
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        localStorage.removeItem("token");
+        window.location.href = "/login.html";
+      });
+    </script>
+  </body>
+</html>

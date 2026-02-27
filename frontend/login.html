@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login</title>
-    <link href="/src/output.css" rel="stylesheet" />
+    <link href="./src/output.css" rel="stylesheet" />
   </head>
 
   <body class="min-h-screen bg-gray-100 flex items-center justify-center px-4">
@@ -97,7 +97,7 @@
           // Redirect to dashboard
           if (response.data.user.role === "USER") {
             window.location.href = "user-dashboard.html";
-          } else if (response.data.role === "CHARITY") {
+          } else if (response.data.user.role === "CHARITY") {
             window.location.href = "org-dashboard.html";
           } else {
             window.location.href = "admin-dashboard.html";

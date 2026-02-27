@@ -19,7 +19,7 @@
             >Login</a
           >
           <a
-            href="register.html"
+            href="signup.html"
             class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
           >
             Register
@@ -82,7 +82,7 @@
         try {
           const res = await axios.get("/api/charities");
           console.log(res);
-          const data = res.data.data;
+          const data = res.data.charities;
           const container = document.getElementById("charityList");
 
           data.forEach((c) => {
@@ -93,6 +93,7 @@
               Math.round((collected / goal) * 100),
               100,
             );
+            console.log(percentage)
 
             container.innerHTML += `
     <div class="bg-white shadow-md rounded-xl p-6 hover:shadow-lg transition flex flex-col justify-between">
