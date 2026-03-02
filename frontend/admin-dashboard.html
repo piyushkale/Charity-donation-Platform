@@ -21,6 +21,16 @@
         Logout
       </button>
     </nav>
+    <!-- Registered Section -->
+    <div class="mb-10">
+      <h2 class="text-xl font-semibold mb-4 text-green-600">
+        Registered Charity Organizations
+      </h2>
+      <div
+        id="charityOrganization"
+        class="space-y-4 max-h-[70vh] overflow-y-auto"
+      ></div>
+    </div>
 
     <!-- Pending Section -->
     <div class="mb-10">
@@ -59,7 +69,7 @@
       const token = localStorage.getItem("token");
       window.onload = async () => {
         await checkAuth();
-       document.querySelector('body').classList.remove('hidden')
+        document.querySelector("body").classList.remove("hidden");
       };
       async function checkAuth() {
         if (!token) {
@@ -88,7 +98,38 @@
 
       checkAuth();
       async function loadAll() {
-        await Promise.all([loadPending(), loadApproved(), loadRejected()]);
+        await Promise.all([
+          loadOrganizations(),
+          loadPending(),
+          loadApproved(),
+          loadRejected(),
+        ]);
+      }
+
+      async function loadOrganizations() {
+        const res = await axios.get("/api/admin/charityOrganizations", {
+          headers: { Authorization: token },
+        });
+
+        renderOrganizations(res.data.data, "charityOrganization");
+      }
+
+      function renderOrganizations(orgs, containerId) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = "";
+        orgs.forEach((org) => {
+          console.log(org);
+          const card = document.createElement("div");
+          card.className =
+            "bg-white p-6 rounded-xl shadow flex justify-between items-center";
+          card.innerHTML = ` <div>
+        <h3 class="font-bold text-lg">${org.name}</h3>
+        <h3 class="text-lg">Email ${org.email}</h3>
+        <h3 class="text-md">Created on ${new Date(org.createdAt).toLocaleDateString()}</h3>
+
+      </div>`;
+          container.appendChild(card);
+        });
       }
 
       async function loadPending() {

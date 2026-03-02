@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./src/output.css" />
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <title>Impact Reports</title>
+  </head>
+
+  <body class="bg-gray-100 min-h-screen">
+    <!-- Navbar -->
+    <nav class="bg-white shadow-md px-8 py-4 flex justify-between items-center">
+      <h1 class="text-xl font-bold text-indigo-600" id="charityProfile"></h1>
+    </nav>
+
+    <!-- Reports List -->
+    <div class="p-8">
+      <h2 class="text-lg font-semibold mb-6 text-gray-700">
+        All Impact Reports
+      </h2>
+      <div id="reportList" class="space-y-4 max-h-[70vh] overflow-y-auto"></div>
+    </div>
+
+    <script>
+      const reportList = document.getElementById("reportList");
+
+      const params = new URLSearchParams(window.location.search);
+      const charityId = params.get("charityId");
+      const charityName = params.get("name");
+      document.getElementById("charityProfile").innerHTML = charityName;
+
+      if (!charityId) {
+        alert("Invalid Charity");
+        window.location.href = "/org-dashboard.html";
+      }
+      loadReports();
+      async function loadReports() {
+        try {
+          const res = await axios.get(`/api/impactReport/${charityId}`);
+          console.log(res.data);
+          const reports = res.data.iReports;
+          const charity = res.data.charity;
+          const collected = charity.collected_amount
+            ? charity.collected_amount
+            : 0;
+          const goal = charity.goal_amount ? charity.goal_amount : 1;
+
+          const percentage = Math.min(
+            Math.round((collected / goal) * 100),
+            100,
+          );
+
+          reportList.innerHTML = "";
+
+          if (reports.length === 0) {
+            reportList.innerHTML =
+              "<p class='text-gray-500'>No reports yet.</p>";
+            return;
+          }
+
+          reports.forEach((report) => {
+            const card = document.createElement("div");
+            card.className =
+              "bg-white shadow-md rounded-2xl p-6 hover:shadow-lg transition";
+
+            card.innerHTML = `
+        <h3 class="text-lg font-semibold mb-2">${report.title}</h3>
+        <p class="text-gray-600">${report.description}</p>
+        <p class="text-sm text-gray-400 mt-3">
+          ${new Date(report.createdAt).toLocaleString()}
+        </p>
+      `;
+
+            reportList.appendChild(card);
+          });
+        } catch (err) {
+          console.error(err.response?.data || err.message);
+        }
+      }
+    </script>
+  </body>
+</html>
