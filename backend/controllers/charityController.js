@@ -1,5 +1,6 @@
 const charityModel = require("../models/charityModel");
 const sendError = require("../services/handleError");
+const { Op } = require("sequelize");
 
 const createCharity = async (req, res) => {
   try {
@@ -38,7 +39,7 @@ const getAllCharities = async (req, res) => {
     const { count, rows } = await charityModel.findAndCountAll({
       where: { status: "APPROVED" },
       limit: pageSize,
-      offset
+      offset,
     });
 
     const totalPages = Math.ceil(count / pageSize);
@@ -46,9 +47,8 @@ const getAllCharities = async (req, res) => {
     res.status(200).json({
       charities: rows,
       totalPages,
-      currentPage: validPage
+      currentPage: validPage,
     });
-
   } catch (error) {
     return sendError(res, error, 500);
   }
@@ -87,9 +87,33 @@ const deleteCharity = async (req, res) => {
     return sendError(res, error, 500);
   }
 };
+
+const searchCharity = async (req, res) => {
+  try {
+    const { query } = req.query;
+    if (!query) {
+      return sendError(res, null, 400, "Missing Query");
+    }
+    const charities = await charityModel.findAll({
+      where: {
+        [Op.or]: [
+          { name: { [Op.like]: `%${query}%` } },
+          { description: { [Op.like]: `%${query}%` } },
+          { mission: { [Op.like]: `%${query}%` } },
+        ],
+      },
+      limit:3
+    });
+
+    res.status(200).json({ charities });
+  } catch (error) {
+    return sendError(res, error, 500);
+  }
+};
 module.exports = {
   createCharity,
   getAllCharities,
   ownedCharities,
   deleteCharity,
+  searchCharity,
 };

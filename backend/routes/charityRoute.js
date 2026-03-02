@@ -4,12 +4,16 @@ const {
   createCharity,
   getAllCharities,
   ownedCharities,
-  deleteCharity
+  deleteCharity,
+  searchCharity
 } = require("../controllers/charityController");
 const auth = require("../middlewares/authMiddleware");
 
 // get request to get all charities for user with role "USER"
 router.get("/", getAllCharities);
+
+// get request to search charity based in keywords
+router.get("/search",searchCharity)
 
 // get all charities that an organization owns
 router.get("/owner", auth, ownedCharities);
