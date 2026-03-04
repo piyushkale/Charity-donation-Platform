@@ -78,7 +78,7 @@
     <!-- Top Donors Section -->
     <section class="bg-white py-16 border-t">
       <div class="max-w-4xl mx-auto px-6">
-        <h3 class="text-2xl font-bold mb-8 text-center">Top 5 Donors</h3>
+        <h3 class="text-2xl font-bold mb-8 text-center">Top Donors</h3>
 
         <div id="topDonors" class="space-y-4">
           <!-- Dynamic donor list -->
@@ -89,7 +89,7 @@
     <!-- Footer -->
     <footer class="bg-gray-900 text-gray-400 py-8 mt-10">
       <div class="max-w-7xl mx-auto px-6 text-center">
-        <p class="text-sm">© 2026 CharityConnect. All rights reserved.</p>
+        <p class="text-sm">CharityConnect</p>
       </div>
     </footer>
 
@@ -110,7 +110,7 @@
               Math.round((collected / goal) * 100),
               100,
             );
-            console.log(percentage);
+          
 
             container.innerHTML += `
     <div class="bg-white shadow-md rounded-xl p-6 hover:shadow-lg transition flex flex-col justify-between">
@@ -171,15 +171,15 @@
       async function loadTopDonors() {
         try {
           const res = await axios.get(
-            "http://localhost:3000/api/donations/top",
+            "/api/donations/topDonations",
           );
 
           const container = document.getElementById("topDonors");
-
+console.log(res.data)
           res.data.forEach((d, index) => {
             container.innerHTML += `
             <div class="flex justify-between bg-gray-50 p-4 rounded-lg shadow-sm">
-              <span class="font-medium">${index + 1}. ${d.name}</span>
+              <span class="font-medium">${index + 1}. ${d.donor.name}</span>
               <span class="text-indigo-600 font-semibold">
                 ₹${d.totalAmount}
               </span>
@@ -215,7 +215,7 @@
           }
         }, 300);
       }
-   function renderSearchResult(data) {
+      function renderSearchResult(data) {
         const container = document.getElementById("searchContainer");
 
         container.innerHTML = "";
@@ -278,6 +278,7 @@
         });
       }
 
+    
       loadCharities();
       loadTopDonors();
     </script>

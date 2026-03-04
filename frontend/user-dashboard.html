@@ -57,17 +57,22 @@
     </div>
     <div class="max-w-7xl mx-auto px-4 py-10">
       <!-- Page Title -->
-      <h1 class="text-3xl font-semibold text-gray-800 mb-10">User Dashboard</h1>
+      <h1 class="text-3xl font-semibold text-gray-800 mb-9">User Dashboard</h1>
 
       <!-- ============================= -->
       <!-- Donation History Section -->
       <!-- ============================= -->
 
       <section class="mb-14">
+        <button
+          onclick="donwloadReport()"
+          class="my-2 bg-blue-600/40 text-gray-900 text-lg px-2 py-1 font-semibold rounded-2xl cursor-pointer hover:bg-blue-600/80 hover:text-white transition-all duration-200"
+        >
+          Download report
+        </button>
         <h2 class="text-xl font-semibold text-gray-700 mb-6">
           Your Donation History
         </h2>
-
         <div
           id="donationContainer"
           class="bg-white rounded-xl shadow p-4 max-h-[70vh] overflow-y-auto"
@@ -235,7 +240,7 @@
           </div>
 
           <p class="text-xs text-gray-400 mt-1">
-            ${new Date(d.createdAt).toLocaleDateString()}
+            ${new Date(d.createdAt).toLocaleString()}
           </p>
 
         </div>
@@ -287,7 +292,7 @@
           );
 
           container.innerHTML += `
-          <div class="bg-white shadow-md rounded-xl p-6 hover:shadow-lg transition flex flex-col justify-between">
+          <div class="bg-white shadow-md rounded-xl p-6 hover:shadow-lg transition flex flex-col justify-between my-1">
 
             <div>
               <h4 class="text-lg font-semibold mb-2">${c.name}</h4>
@@ -360,7 +365,7 @@
 
               <div class="mb-2 flex justify-between text-sm">
                 <span class="font-medium text-gray-700">
-                  ₹${collected} raised
+                  ₹${collected} Raised
                 </span>
                 <span class="text-gray-500">
                   Goal ₹${goal}
@@ -492,6 +497,25 @@
         } catch (err) {
           console.error(err);
           alert("Payment failed");
+        }
+      }
+
+      async function donwloadReport() {
+        try {
+          const res = await axios.get("/api/donations/download", {
+            responseType: "blob",
+            headers: { Authorization: token },
+          });
+
+          const url = window.URL.createObjectURL(new Blob([res.data]));
+          const link = document.createElement("a");
+          link.href = url;
+          link.setAttribute("download", "donation-history.txt");
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+        } catch (error) {
+          console.log(error);
         }
       }
     </script>
