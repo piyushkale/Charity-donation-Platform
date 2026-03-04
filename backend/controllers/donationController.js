@@ -3,7 +3,9 @@ const crypto = require("crypto");
 const razorpay = require("../config/razorpay");
 const charityModel = require("../models/charityModel");
 const sendError = require("../services/handleError");
+const userModel = require("../models/userModel");
 const sequelize = require("../utils/db-connection");
+const { Sequelize } = require("sequelize");
 const createOrder = async (req, res) => {
   try {
     const { userId } = req.user;
@@ -121,4 +123,84 @@ const getMyDonations = async (req, res) => {
   }
 };
 
-module.exports = { createOrder, verifyPayment, getMyDonations };
+const topDonors = async (req, res) => {
+  try {
+    const topDonors = await donationModel.findAll({
+      where: { status: "SUCCESS" },
+
+      attributes: [
+        "userId",
+        [Sequelize.fn("SUM", Sequelize.col("amount")), "totalAmount"],
+      ],
+
+      include: [
+        {
+          model: userModel,
+          as: "donor",
+          attributes: ["name"],
+        },
+      ],
+
+      group: ["userId", "donor.id"],
+
+      order: [[Sequelize.literal("totalAmount"), "DESC"]],
+
+      limit: 5,
+    });
+
+    res.status(200).json(topDonors);
+  } catch (error) {
+    return sendError(res, error, 500);
+  }
+};
+
+const downloadHistory = async (req, res) => {
+  try {
+    const { userId } = req.user;
+
+    const data = await donationModel.findAll({
+      where: { userId },
+      include: [
+        {
+          model: charityModel,
+          as: "charity",
+          attributes: ["name"],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    if (!data.length) {
+      return res.status(404).json({ message: "No donations found" });
+    }
+
+    let content = "=== Donation History ===\n\n";
+
+    data.forEach((donation, index) => {
+      content += `Donation #${index + 1}\n`;
+      content += `Charity: ${donation.charity?.name || "N/A"}\n`;
+      content += `Amount: ₹${donation.amount}\n`;
+      content += `Date: ${donation.createdAt.toLocaleString()}\n`;
+      content += "-----------------------------\n";
+    });
+
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=donation-history.txt",
+    );
+    res.setHeader("Content-Type", "text/plain");
+
+    res.send(content);
+  } catch (error) {
+    console.error(error);
+    return sendError(res, error, 500);
+  }
+};
+
+module.exports = {
+  createOrder,
+  verifyPayment,
+  getMyDonations,
+  topDonors,
+  downloadHistory,
+};

@@ -3,16 +3,21 @@ const router = express.Router();
 const {
   createOrder,
   verifyPayment,
-  getMyDonations
+  getMyDonations,
+  topDonors,
+  downloadHistory
 } = require("../controllers/donationController");
 
 const auth = require("../middlewares/authMiddleware");
 
-router.use(auth);
-router.post("/createOrder", createOrder);
+router.post("/createOrder", auth, createOrder);
 
-router.post("/verifyPayment", verifyPayment);
+router.post("/verifyPayment", auth, verifyPayment);
 
-router.get("/my",getMyDonations)
+router.get("/my", auth, getMyDonations);
+
+router.get("/download",auth,downloadHistory)
+
+router.get("/topDonations", topDonors);
 
 module.exports = router;
