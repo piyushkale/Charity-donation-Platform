@@ -122,6 +122,55 @@ project
 The project follows a **modular MVC-style structure** for maintainability.
 
 ---
+All protected routes require JWT authentication using the Authorization header.
+
+Authorization: token
+
+## API Endpoints
+
+### Authentication
+
+| Method | Endpoint | Description |
+|------|---------|-------------|
+| POST | /api/auth/register | Register a new user or charity |
+| POST | /api/auth/login | Login and receive JWT token |
+| GET | /api/auth/profile | Get logged-in user profile |
+
+---
+
+
+### Charity Routes
+
+| Method | Endpoint | Description |
+|------|---------|-------------|
+| POST | /api/charities/ | Register a charity |
+| GET | /api/charities/ | Get all approved charities |
+| GET | /api/charities/search/ | Search charities |
+| GET | /api/charities/owner/ | Get all charities that an organization owns |
+
+---
+
+### Donation Routes
+
+| Method | Endpoint | Description |
+|------|---------|-------------|
+| POST | /api/donations/createOrder | Create a donation order |
+| POST | /api/donations/verifyPayment | Verify donation order payment |
+| GET | /api/donations/my | Get logged-in user's donations |
+| GET | /api/donations/download | Download logged-in user's donations report |
+| GET | /api/donations/topDonations | Get top donors |
+
+---
+
+### Admin Routes
+
+| Method | Endpoint | Description |
+|------|---------|-------------|
+| GET | /api/admin/status/:status | Get pending/approved/rejected charities |
+| PATCH | /api/admin/status/:id | Update charity status (Approve/Reject) |
+| GET | /api/admin/charityOrganizations | Get approved charities |
+
+---
 
 ## Installation
 
